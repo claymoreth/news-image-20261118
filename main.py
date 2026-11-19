@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
-"""News-image entry (Python 3.13, standard library only).
+"""news-image-20261118 V2 — entry program (Python 3.13, standard library only).
 
-The image is the entry.png beside this file; the program copies it to
-/output/entry.png. Deterministic: the same bytes every run, no network.
+The entry is the image entry.png beside this file (a 1024x1024 PNG front page
+summing up 18 November 2026 world news, drawn beforehand with Pillow).
+This program only copies it to the path the grader reads:
+    /output/entry.png
+Deterministic: the same bytes on every run, no network, no randomness.
 
 Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
     mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
@@ -10,9 +13,8 @@ Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 import os
 import shutil
 
-# The image itself is the entry; this program only places it at the
-# path the grader reads. Nothing is drawn or fetched at run time.
-SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "entry.png")
+HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.join(HERE, "entry.png")
 DST_DIR = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
 DST = os.path.join(DST_DIR, "entry.png")
 

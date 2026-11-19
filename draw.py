@@ -1,254 +1,310 @@
 #!/usr/bin/env python3
-"""Draw the 18 November 2026 world-news front page (1024x1024 PNG).
-
-One-day news infographic, drawn entirely with Pillow vector shapes and
-DejaVu text -- no photos, no network, no AI images. Deterministic output.
-Run: python3 draw.py  ->  writes entry.png next to this file.
+"""NEWS-IMAGE-20261118 V2 — rebuild from 0.
+Front page: masthead + hero 45% (APEC Shenzhen, flags + skyline, no faces)
++ 5 panels (Gaza, Gulf, Ukraine, USA, Nvidia) + climate/health strip + 1-line ticker.
+Drawn with Pillow. Deterministic: fixed geometry, fixed text, no randomness.
+Writes entry.png (1024x1024) next to this file.
 """
-from PIL import Image, ImageDraw, ImageFont
+import math
 import os
 
-W, H = 1024, 1024
+from PIL import Image, ImageDraw, ImageFont
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "entry.png")
 
-# ---------- palette ----------
-PAPER   = (246, 241, 231)   # newsprint
-INK     = (26, 26, 26)
-NAVY    = (20, 33, 61)
-RED     = (193, 18, 31)
-WHITE   = (255, 255, 255)
-PANEL   = (255, 255, 255)
-BORDER  = (200, 192, 172)
-MUTED   = (90, 86, 76)
-GOLD    = (176, 141, 60)
-TEAL    = (13, 110, 110)
-ORANGE  = (196, 94, 20)
-PURPLE  = (104, 60, 140)
-BLUE    = (24, 78, 150)
-DARKRED = (150, 30, 30)
+W, H = 1024, 1024
+FONT_DIR = "/usr/share/fonts/truetype/dejavu"
 
-FD = "/usr/share/fonts/truetype/dejavu"
+# ---------- palette ----------
+INK = (18, 18, 18)
+PAPER = (255, 255, 255)
+NAVY = (13, 30, 62)        # hero background
+NAVY2 = (26, 52, 96)       # skyline buildings
+GOLD = (212, 175, 55)
+GOLD_LT = (232, 196, 90)
+RED = (178, 34, 34)        # masthead date bar
+GAZA = (139, 0, 0)
+GULF = (176, 58, 8)
+UKR = (24, 52, 92)
+USA = (23, 66, 178)
+NVDA = (18, 92, 46)
+TEAL = (11, 74, 74)
+TICK = (8, 8, 8)
+
 
 def font(name, size):
-    return ImageFont.truetype(os.path.join(FD, name), size)
+    return ImageFont.truetype(os.path.join(FONT_DIR, name), size)
 
-F_SERIF_B  = lambda s: font("DejaVuSerif-Bold.ttf", s)
-F_SERIF    = lambda s: font("DejaVuSerif.ttf", s)
-F_SANS_B   = lambda s: font("DejaVuSans-Bold.ttf", s)
-F_SANS     = lambda s: font("DejaVuSans.ttf", s)
 
-img = Image.new("RGB", (W, H), PAPER)
-d = ImageDraw.Draw(img)
+F_SERIF_B = lambda s: font("DejaVuSerif-Bold.ttf", s)
+F_SANS_B = lambda s: font("DejaVuSans-Bold.ttf", s)
+F_SANS = lambda s: font("DejaVuSans.ttf", s)
 
-def text_wrapped(draw, xy, text, fnt, fill, max_w, leading=None):
-    """Draw text wrapped to max_w. Returns y after last line."""
-    if leading is None:
-        leading = int(fnt.size * 1.28)
+
+def text_w(draw, s, f):
+    return draw.textlength(s, font=f)
+
+
+def wrap(draw, text, f, max_w):
+    """Greedy word wrap -> list of lines that each fit max_w."""
     words = text.split()
     lines, cur = [], ""
     for w_ in words:
         trial = (cur + " " + w_).strip()
-        if draw.textlength(trial, font=fnt) <= max_w:
+        if text_w(draw, trial, f) <= max_w or not cur:
             cur = trial
         else:
-            if cur:
-                lines.append(cur)
+            lines.append(cur)
             cur = w_
     if cur:
         lines.append(cur)
-    x, y = xy
-    for ln in lines:
-        draw.text((x, y), ln, font=fnt, fill=fill)
-        y += leading
-    return y
+    return lines
 
-def text_center(draw, cx, y, text, fnt, fill):
-    w_ = draw.textlength(text, font=fnt)
-    draw.text((cx - w_ / 2, y), text, font=fnt, fill=fill)
-    return y + fnt.size
 
-def kicker(draw, x, y, text, color):
-    d.text((x, y), text, font=F_SANS_B(15), fill=color)
-    return y + 22
+def fit_one_line(draw, text, path, start, max_w, minimum):
+    """Largest font size (<= start, >= minimum) that fits text on one line."""
+    size = start
+    while size > minimum:
+        f = font(path, size)
+        if text_w(draw, text, f) <= max_w:
+            return f, size
+        size -= 1
+    return font(path, minimum), minimum
 
-# ================= MASTHEAD =================
-d.rectangle([0, 0, W, 108], fill=NAVY)
-text_center(d, W // 2, 12, "THE WORLD", F_SERIF_B(58), WHITE)
-text_center(d, W // 2, 74, "WEDNESDAY  ·  18 NOVEMBER 2026", F_SANS_B(24), (232, 196, 120))
-d.rectangle([0, 108, W, 114], fill=RED)
 
-# ================= HERO: SHENZHEN SUMMIT =================
-HX, HY, HW, HH = 28, 128, W - 56, 300
-d.rectangle([HX, HY, HX + HW, HY + HH], fill=PANEL, outline=BORDER, width=2)
-# left: headline + summary
-lx, lw = HX + 22, 560
-y = HY + 18
-y = kicker(d, lx, y, "DIPLOMACY  ·  SHENZHEN, CHINA", RED)
-d.text((lx, y), "Three leaders,", font=F_SERIF_B(46), fill=INK); y += 52
-d.text((lx, y), "one summit", font=F_SERIF_B(46), fill=INK); y += 56
-y = text_wrapped(d, (lx, y), "Xi and Putin meet in Shenzhen. Trump joins them "
-    "Thursday for the first ever US–China–Russia trilateral.",
-    F_SANS(23), (60, 60, 60), lw, leading=30)
-d.text((lx, HY + HH - 34), "APEC  ·  Xi Jinping  ·  Vladimir Putin  ·  Donald Trump",
-       font=F_SANS_B(16), fill=MUTED)
+def draw_centered(draw, cx, y, text, f, fill):
+    w_ = text_w(draw, text, f)
+    draw.text((cx - w_ / 2, y), text, font=f, fill=fill)
+    return w_
 
-# right: three flags on poles + skyline
-rx = HX + 620
-# skyline silhouette
-d.rectangle([rx, HY + 210, rx + 330, HY + 292], fill=(226, 220, 205))
-for bx, bw, bh in [(0, 46, 90), (56, 34, 130), (100, 52, 70), (162, 30, 150),
-                   (202, 48, 95), (260, 36, 120), (306, 24, 80)]:
-    d.rectangle([rx + bx, HY + 292 - bh, rx + bx + bw, HY + 292], fill=NAVY)
-# flag poles
-for i, (fx, col) in enumerate([(rx + 18, None), (rx + 128, None), (rx + 238, None)]):
-    d.rectangle([fx, HY + 40, fx + 4, HY + 210], fill=(120, 110, 95))
-# China flag
-d.rectangle([rx + 22, HY + 40, rx + 102, HY + 88], fill=(222, 41, 16))
-for sx, sy in [(30, 48), (46, 44), (52, 56), (44, 66), (32, 62)]:
-    d.ellipse([rx + sx, HY + sy, rx + sx + 7, HY + sy + 7], fill=(255, 222, 0))
-# Russia flag
-d.rectangle([rx + 132, HY + 40, rx + 212, HY + 56], fill=WHITE)
-d.rectangle([rx + 132, HY + 56, rx + 212, HY + 72], fill=(0, 57, 166))
-d.rectangle([rx + 132, HY + 72, rx + 212, HY + 88], fill=(213, 0, 50))
-# US flag
-d.rectangle([rx + 242, HY + 40, rx + 322, HY + 88], fill=(178, 34, 52))
-for yy in range(HY + 46, HY + 88, 12):
-    d.rectangle([rx + 242, yy, rx + 322, yy + 5], fill=WHITE)
-d.rectangle([rx + 242, HY + 40, rx + 282, HY + 64], fill=(60, 59, 110))
-for sx in range(246, 280, 9):
-    for sy in range(44, 62, 9):
-        d.ellipse([rx + sx, HY + sy, rx + sx + 3, HY + sy + 3], fill=WHITE)
-# (skyline label removed: the kicker already names Shenzhen)
 
-# ================= GRID 2x2 =================
-GY = 448
-GW, GH, GAP = 470, 176, 16
-GX = 28
+def star_points(cx, cy, r_out, r_in, rot=-90):
+    pts = []
+    for i in range(10):
+        r = r_out if i % 2 == 0 else r_in
+        a = math.radians(rot + i * 36)
+        pts.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+    return pts
 
-def story(x, y, w, h, kick, color, head, body, draw_icon):
-    d.rectangle([x, y, x + w, y + h], fill=PANEL, outline=BORDER, width=2)
-    d.rectangle([x, y, x + w, y + 4], fill=color)
-    ix = x + w - 108
-    draw_icon(ix, y + 14, 96, 96)
-    tx = x + 16
-    yy = y + 14
-    yy = kicker(d, tx, yy, kick, color)
-    yy = text_wrapped(d, (tx, yy), head, F_SANS_B(25), INK, w - 140, leading=30)
-    text_wrapped(d, (tx, yy + 4), body, F_SANS(17), (70, 70, 70), w - 140, leading=22)
 
-# --- icon: Gulf shield / interception ---
-def icon_gulf(x, y, w, h):
-    cx, cy = x + w // 2, y + h // 2
-    d.arc([x, y + 8, x + w, y + h], 180, 360, fill=DARKRED, width=7)
-    d.polygon([(cx - 26, y + 34), (cx + 26, y + 34), (cx, y + 82)], fill=(193, 18, 31))
-    d.polygon([(cx - 26, y + 34), (cx, y + 10), (cx + 26, y + 34)], fill=(222, 60, 60))
-    for ang in (-35, 0, 35):
-        pass
-    d.line([x + 6, y + 78, x + w - 6, y + 78], fill=NAVY, width=4)
+# ---------- flags ----------
+def flag_us(d, x, y, w, h):
+    stripe = h / 13.0
+    for i in range(13):
+        c = (178, 34, 52) if i % 2 == 0 else (255, 255, 255)
+        d.rectangle([x, y + i * stripe, x + w, y + (i + 1) * stripe], fill=c)
+    cw, ch = w * 0.42, stripe * 7
+    d.rectangle([x, y, x + cw, y + ch], fill=(28, 44, 96))
+    for r_ in range(4):
+        for c_ in range(5):
+            sx = x + 6 + c_ * (cw - 12) / 4
+            sy = y + 5 + r_ * (ch - 10) / 3
+            d.ellipse([sx - 1.6, sy - 1.6, sx + 1.6, sy + 1.6], fill=(255, 255, 255))
+    d.rectangle([x, y, x + w, y + h], outline=(0, 0, 0), width=1)
 
-# --- icon: Kerch bridge, broken deck ---
-def icon_bridge(x, y, w, h):
-    d.arc([x + 4, y + 30, x + w - 4, y + 108], 180, 360, fill=BLUE, width=8)
-    d.rectangle([x, y + 66, x + w, y + 72], fill=NAVY)
-    # broken gap in deck
-    d.rectangle([x + w // 2 - 10, y + 60, x + w // 2 + 12, y + 72], fill=PAPER)
-    d.line([x + w // 2 - 10, y + 72, x + w // 2 - 4, y + 86], fill=NAVY, width=4)
-    d.line([x + w // 2 + 12, y + 72, x + w // 2 + 6, y + 86], fill=NAVY, width=4)
-    d.rectangle([x + 10, y + 72, x + 16, y + 96], fill=NAVY)
-    d.rectangle([x + w - 16, y + 72, x + w - 10, y + 96], fill=NAVY)
-    # smoke
-    d.ellipse([x + w // 2 - 14, y + 6, x + w // 2 + 2, y + 22], fill=(150, 150, 150))
-    d.ellipse([x + w // 2 - 4, y - 2, x + w // 2 + 12, y + 14], fill=(180, 180, 180))
 
-# --- icon: Capitol dome + 56-44 ---
-def icon_capitol(x, y, w, h):
-    cx = x + w // 2
-    d.rectangle([x + 8, y + 66, x + w - 8, y + 92], fill=NAVY)
-    for px in range(x + 14, x + w - 14, 14):
-        d.rectangle([px, y + 70, px + 5, y + 92], fill=WHITE)
-    d.pieslice([cx - 30, y + 28, cx + 30, y + 76], 180, 360, fill=NAVY)
-    d.rectangle([cx - 3, y + 12, cx + 3, y + 30], fill=NAVY)
-    d.ellipse([cx - 5, y + 8, cx + 5, y + 18], fill=RED)
+def flag_cn(d, x, y, w, h):
+    d.rectangle([x, y, x + w, y + h], fill=(222, 41, 16))
+    cx, cy, r = x + w * 0.16, y + h * 0.28, h * 0.20
+    d.polygon(star_points(cx, cy, r, r * 0.42), fill=(255, 222, 0))
+    for sx, sy in [(0.34, 0.12), (0.42, 0.24), (0.40, 0.42), (0.30, 0.50)]:
+        d.polygon(star_points(x + w * sx, y + h * sy, h * 0.07, h * 0.03), fill=(255, 222, 0))
+    d.rectangle([x, y, x + w, y + h], outline=(0, 0, 0), width=1)
 
-# --- icon: chip ---
-def icon_chip(x, y, w, h):
-    d.rectangle([x + 22, y + 22, x + w - 22, y + h - 22], fill=(20, 33, 61))
-    d.rectangle([x + 34, y + 34, x + w - 34, y + h - 34], outline=GOLD, width=3)
-    d.text((x + w // 2 - 14, y + h // 2 - 12), "AI", font=F_SANS_B(22), fill=GOLD)
-    for px in range(x + 30, x + w - 22, 12):
-        d.line([px, y + 12, px, y + 22], fill=INK, width=3)
-        d.line([px, y + h - 22, px, y + h - 12], fill=INK, width=3)
-    for py in range(y + 30, y + h - 22, 12):
-        d.line([x + 12, py, x + 22, py], fill=INK, width=3)
-        d.line([x + w - 22, py, x + w - 12, py], fill=INK, width=3)
 
-story(GX, GY, GW, GH, "THE GULF", DARKRED,
-      "Iran strikes Kuwait & Bahrain",
-      "After the US hit a missile site on Qeshm Island, Gulf defences intercept drones and missiles.",
-      icon_gulf)
-story(GX + GW + GAP, GY, GW, GH, "UKRAINE", BLUE,
-      "Kerch Bridge hit again",
-      "A second day of strikes on the Crimean Bridge; part of the road span collapses.",
-      icon_bridge)
-story(GX, GY + GH + GAP, GW, GH, "UNITED STATES", NAVY,
-      "Democrats take the Senate",
-      "Mary Peltola wins Alaska. The new Senate: 56 Democrats, 44 Republicans.",
-      icon_capitol)
-story(GX + GW + GAP, GY + GH + GAP, GW, GH, "TECHNOLOGY", TEAL,
-      "Nvidia says no to Huang",
-      "The board rejects the founder's return as CEO — after a record $115.8bn quarter.",
-      icon_chip)
+def flag_ru(d, x, y, w, h):
+    third = h / 3.0
+    for i, c in enumerate([(255, 255, 255), (0, 57, 166), (213, 0, 50)]):
+        d.rectangle([x, y + i * third, x + w, y + (i + 1) * third], fill=c)
+    d.rectangle([x, y, x + w, y + h], outline=(0, 0, 0), width=1)
 
-# ================= BOTTOM BAND: 2 stories =================
-BY = GY + 2 * GH + 2 * GAP + 8   # 824
-BW, BH = 470, 118
 
-def icon_cyclone(x, y, w, h):
-    cx, cy = x + w // 2, y + h // 2
-    for r, col in [(40, ORANGE), (30, (222, 120, 40)), (20, (240, 170, 80)), (10, (250, 210, 130))]:
-        d.arc([cx - r, cy - r, cx + r, cy + r], 20, 300, fill=col, width=6)
-    d.ellipse([cx - 6, cy - 6, cx + 6, cy + 6], fill=ORANGE)
-    d.line([x + 4, y + h - 8, x + w - 4, y + h - 8], fill=NAVY, width=4)
+# ---------- skyline ----------
+def skyline(d, x0, y_top, x1, y_bot):
+    profile = [
+        (0.00, 0.055, 0.42), (0.055, 0.045, 0.66), (0.10, 0.06, 0.52),
+        (0.16, 0.05, 0.80), (0.21, 0.055, 0.58), (0.265, 0.04, 0.92),
+        (0.305, 0.06, 0.70), (0.365, 0.045, 0.48), (0.41, 0.06, 0.86),
+        (0.47, 0.05, 0.60), (0.52, 0.055, 0.96), (0.575, 0.045, 0.72),
+        (0.62, 0.06, 0.55), (0.68, 0.05, 0.88), (0.73, 0.055, 0.64),
+        (0.785, 0.045, 0.78), (0.83, 0.06, 0.50), (0.89, 0.05, 0.74),
+        (0.94, 0.06, 0.46),
+    ]
+    span = x1 - x0
+    depth = y_bot - y_top
+    for xs, bw, bh in profile:
+        bx0 = x0 + xs * span
+        bx1 = bx0 + bw * span
+        by0 = y_bot - bh * depth
+        d.rectangle([bx0, by0, bx1, y_bot], fill=NAVY2)
+        if bh >= 0.92:
+            ax = (bx0 + bx1) / 2
+            d.line([ax, by0, ax, by0 - 12], fill=GOLD, width=2)
+            d.ellipse([ax - 2, by0 - 15, ax + 2, by0 - 11], fill=GOLD)
+        cols = max(1, int((bx1 - bx0) // 13))
+        rows = max(1, int((y_bot - by0) // 16))
+        for ci in range(cols):
+            for ri in range(rows):
+                if (ci * 7 + ri * 3 + int(xs * 100)) % 3 == 0:
+                    wx = bx0 + 4 + ci * 13
+                    wy = by0 + 5 + ri * 16
+                    if wx + 4 < bx1 and wy + 4 < y_bot:
+                        d.rectangle([wx, wy, wx + 4, wy + 5], fill=GOLD_LT)
 
-def icon_health(x, y, w, h):
-    cx, cy = x + w // 2, y + h // 2
-    d.rectangle([cx - 10, cy - 30, cx + 10, cy + 30], fill=DARKRED)
-    d.rectangle([cx - 30, cy - 10, cx + 30, cy + 10], fill=DARKRED)
-    d.ellipse([x + 6, y + 6, x + 22, y + 22], fill=PURPLE)
-    d.ellipse([x + w - 22, y + h - 22, x + w - 6, y + h - 6], fill=PURPLE)
 
-def story_small(x, y, w, h, kick, color, head, body, draw_icon):
-    d.rectangle([x, y, x + w, y + h], fill=PANEL, outline=BORDER, width=2)
-    d.rectangle([x, y, x + w, y + 4], fill=color)
-    ix = x + w - 96
-    draw_icon(ix, y + 10, 84, 84)
-    tx = x + 16
-    yy = y + 12
-    yy = kicker(d, tx, yy, kick, color)
-    yy = text_wrapped(d, (tx, yy), head, F_SANS_B(22), INK, w - 120, leading=26)
-    text_wrapped(d, (tx, yy + 2), body, F_SANS(16), (70, 70, 70), w - 120, leading=20)
+# ---------- panel ----------
+def panel(d, x, y, w, h, color, kicker, headline, details, head_size=19, det_size=13):
+    """One news panel. details = list of strings; joined into one flow so
+    wrapping is optimal (no paragraph-forced breaks, no dropped tail).
+    Returns (headline_lines, detail_lines) for QA."""
+    pad = 10
+    d.rectangle([x, y, x + w, y + 28], fill=color)
+    kf = F_SANS_B(15)
+    while text_w(d, kicker, kf) > w - 2 * pad and kf.size > 11:
+        kf = F_SANS_B(kf.size - 1)
+    d.text((x + pad, y + 6), kicker, font=kf, fill=(255, 255, 255))
+    hf = F_SERIF_B(head_size)
+    hl = wrap(d, headline, hf, w - 2 * pad)
+    while len(hl) > 2 and hf.size > 15:
+        hf = F_SERIF_B(hf.size - 1)
+        hl = wrap(d, headline, hf, w - 2 * pad)
+    hy = y + 34
+    for ln in hl[:2]:
+        d.text((x + pad, hy), ln, font=hf, fill=INK)
+        hy += int(hf.size * 1.18)
+    # detail: join into ONE string, wrap to max 3 lines; shrink if it overflows
+    flow = " ".join(details)
+    df = F_SANS(det_size)
+    dl = wrap(d, flow, df, w - 2 * pad)
+    while len(dl) > 3 and df.size > 11:
+        df = F_SANS(df.size - 1)
+        dl = wrap(d, flow, df, w - 2 * pad)
+    dy = hy + 4
+    for ln in dl[:3]:
+        d.text((x + pad, dy), ln, font=df, fill=(40, 40, 40))
+        dy += int(df.size * 1.30)
+    d.line([x, y + h - 1, x + w, y + h - 1], fill=(200, 200, 200), width=1)
+    # QA: warn if text was dropped
+    dropped = len(dl) > 3
+    return hl, dl, dropped
 
-story_small(GX, BY, BW, BH, "INDIA  ·  WEATHER", ORANGE,
-            "Cyclone Akvan bears down",
-            "A severe storm heads for India's east coast; Odisha evacuates coastal districts.",
-            icon_cyclone)
-story_small(GX + BW + GAP, BY, BW, BH, "HEALTH", PURPLE,
-            "Ebola passes 11,000 cases",
-            "The DR Congo outbreak grows — and the US loses its measles-free status after 26 years.",
-            icon_health)
 
-# ================= FOOTER TICKER =================
-FY = BY + BH + 14
-d.rectangle([28, FY, W - 28, FY + 34], fill=NAVY)
-ticker = ("ALSO:  EU proposes a \u20ac45bn Ukraine loan  \u2022  Dhoni retires from the IPL  "
-          "\u2022  Jesse Jackson dies at 84  \u2022  Afghan quake kills 600+")
-# shrink until it fits inside the bar (28px margins each side)
-tfs = 15
-while d.textlength(ticker, font=F_SANS(tfs)) > (W - 28 - 40 - 12) and tfs > 11:
-    tfs -= 1
-d.text((40, FY + (34 - tfs) // 2 - 1), ticker, font=F_SANS(tfs), fill=WHITE)
-d.rectangle([0, H - 4, W, H], fill=RED)
+def main():
+    img = Image.new("RGB", (W, H), PAPER)
+    d = ImageDraw.Draw(img)
+    issues = []
 
-img.save(OUT, "PNG", optimize=True)
-print("wrote", OUT, os.path.getsize(OUT), "bytes", img.size)
+    d.rectangle([0, 0, W - 1, H - 1], outline=INK, width=3)
+
+    # ================= MASTHEAD (0-90) =================
+    mf = F_SERIF_B(58)
+    draw_centered(d, W / 2, 4, "THE WORLD", mf, INK)
+    d.rectangle([3, 66, W - 4, 90], fill=RED)
+    date_txt = "WEDNESDAY  —  18 NOVEMBER 2026"
+    df_, _sz = fit_one_line(d, date_txt, "DejaVuSans-Bold.ttf", 22, W - 40, 16)
+    draw_centered(d, W / 2, 68, date_txt, df_, (255, 255, 255))
+
+    # ================= HERO (90-550) =================
+    d.rectangle([3, 90, W - 4, 550], fill=NAVY)
+    kf = F_SANS_B(17)
+    draw_centered(d, W / 2, 102, "APEC  ·  SHENZHEN, CHINA", kf, GOLD_LT)
+    fw, fh = 132, 82
+    gap = 26
+    total_fw = 3 * fw + 2 * gap
+    fx0 = (W - total_fw) / 2
+    fy = 130
+    flag_us(d, fx0, fy, fw, fh)
+    flag_cn(d, fx0 + fw + gap, fy, fw, fh)
+    flag_ru(d, fx0 + 2 * (fw + gap), fy, fw, fh)
+    lf = F_SANS_B(13)
+    for i, lab in enumerate(["UNITED STATES", "CHINA", "RUSSIA"]):
+        cx = fx0 + i * (fw + gap) + fw / 2
+        draw_centered(d, cx, fy + fh + 6, lab, lf, (255, 255, 255))
+    hero_head = "Trump shakes hands with Xi + Putin at APEC family photo in Shenzhen"
+    hf = F_SERIF_B(33)
+    hl = wrap(d, hero_head, hf, 920)
+    while len(hl) > 3 and hf.size > 27:
+        hf = F_SERIF_B(hf.size - 1)
+        hl = wrap(d, hero_head, hf, 920)
+    hy = 252
+    for ln in hl:
+        draw_centered(d, W / 2, hy, ln, hf, (255, 255, 255))
+        hy += int(hf.size * 1.22)
+    if len(hl) > 3:
+        issues.append(f"hero headline {len(hl)} lines")
+    draw_centered(d, W / 2, hy + 6, "Handshake Wed, trilateral Thu",
+                  F_SANS_B(23), GOLD)
+    draw_centered(d, W / 2, hy + 40, "Denuclearization  ·  Iran  ·  Ukraine  ·  Trade",
+                  F_SANS(16), (220, 225, 235))
+    skyline(d, 3, 452, W - 4, 550)
+
+    # ================= PANEL ROW 1 (550-700) =================
+    panel(d, 8, 550, 332, 150, GAZA, "GAZA — YELLOW LINE CROSSED",
+          "Israeli tanks cross Yellow Line near Nuseirat",
+          ["First ground raid since Oct 2025 ceasefire. 5,200 fled, 3 killed Wed.",
+           "1,600+ killed since truce. Board of Peace: both sides failing."],
+          head_size=19, det_size=12)
+    panel(d, 346, 550, 332, 150, GULF, "GULF — HORMUZ ON FIRE",
+          "Iran drones at Kuwait Ali Al Salem base",
+          ["Bahrain hit 3rd time in a week. Houthi missile to Riyadh intercepted.",
+           "US hit IRGC site on Qeshm Tue. Hormuz = 1/5 world energy."],
+          head_size=19, det_size=12)
+    panel(d, 684, 550, 332, 150, UKR, "UKRAINE — KERCH BRIDGE FALLS",
+          "230m road arch collapses into sea",
+          ["1,441 drones overnight — a war record. Odesa: 4 killed, 17 injured.",
+           "Russian refining -45%. EU proposes €45bn for 2027. UK 1,000 drones."],
+          head_size=19, det_size=12)
+
+    # ================= PANEL ROW 2 (700-850) =================
+    panel(d, 8, 700, 500, 150, USA, "USA — SENATE 56-44",
+          "Peltola wins Alaska 50.1% vs 45.8%",
+          ["First Alaska Native in the Senate. Democrats 56-44.",
+           "Jeffries nominated Speaker 251-11, on track first Black Speaker."],
+          head_size=21, det_size=14)
+    panel(d, 516, 700, 500, 150, NVDA, "NVIDIA — NO COMEBACK",
+          "Board: Huang will NOT return",
+          ["Revenue $115.8bn (doubled), profit $65.3bn. Interim CEO Colette Kress.",
+           "SEC + FBI + DOJ + Congress probing."],
+          head_size=21, det_size=14)
+
+    # ================= STRIP (850-940) =================
+    d.rectangle([3, 850, W - 4, 940], fill=TEAL)
+    d.text((16, 858), "CLIMATE  ·  HEALTH  ·  STORM", font=F_SANS_B(14), fill=GOLD_LT)
+    strip_items = [
+        "COP31 deadlocked",
+        "Ebola in Congo 11,000+ cases",
+        "Cyclone Akvan nears India",
+        "US loses measles-free status",
+    ]
+    col_w = (W - 32) / 4
+    sf = F_SANS_B(15)
+    for i, item in enumerate(strip_items):
+        cx = 16 + i * col_w
+        f = sf
+        while text_w(d, "•  " + item, f) > col_w - 8 and f.size > 12:
+            f = F_SANS_B(f.size - 1)
+        d.text((cx, 884), "•  " + item, font=f, fill=(255, 255, 255))
+
+    # ================= TICKER (940-1024) =================
+    d.rectangle([3, 940, W - 4, 1024], fill=TICK)
+    ticker = ("EU-Indonesia trade pact approved  •  Jesse Jackson dies at 84  •  "
+              "Dhoni retires from IPL  •  Afghanistan quake 600+ dead")
+    # condensed bold so the single line stays big and readable
+    tf, tsize = fit_one_line(d, ticker,
+                             "/usr/share/fonts/truetype/noto/NotoSans-CondensedBold.ttf",
+                             23, W - 32, 16)
+    tw = text_w(d, ticker, tf)
+    d.text(((W - tw) / 2, 940 + (84 - tsize) / 2 - 4), ticker, font=tf, fill=(255, 255, 255))
+    if tsize < 17:
+        issues.append(f"ticker font shrunk to {tsize}pt (too small)")
+
+    img.save(OUT, "PNG", optimize=True)
+    size = os.path.getsize(OUT)
+    print(f"saved {OUT}  {W}x{H}  {size} bytes")
+    print("issues:", issues if issues else "none")
+    return issues
+
+
+if __name__ == "__main__":
+    main()
