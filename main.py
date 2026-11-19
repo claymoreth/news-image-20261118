@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""news-image-20261118 V2.1 — entry program (Python 3.13, standard library only).
+"""news-image-20261118 V2.2 — entry program (Python 3.13, standard library only).
 
 The entry is the image entry.png beside this file (a 1024x1024 PNG front page
 summing up 18 November 2026 world news, drawn beforehand with Pillow).
-V2.1 rebuilds the page on the architecture of the day's top entry: header
-with the date dominant, a region bar (7 regions, 40 stories), a numbers bar,
-three hero panels side by side (APEC / Gulf / Voyager), a 5x2 grid of ten
-panels, a dot-matrix world map, a 14-40 briefs list, and a date-check box.
+V2.2 keeps V2.1's 40 verified stories but rebuilds the LOOK so it does not
+resemble the day's top entry: a white masthead ("THE WORLD", black serif,
+date below a thin rule), one line "40 stories across 7 regions", ONE big
+hero left (APEC) with two stacked heroes right (Gulf, Voyager), a 2-column
+grid of ten HORIZONTAL panels (visual left, text right), an outline world
+map with BLUE pins and the legend above, a one-column "ALSO TODAY" sidebar
+(14-40), a numbers bar of six white boxes at the BOTTOM, and the date check
+as one italic line in the footer. Palette: black + white + brick red +
+dark blue only. Serif headlines, sans body.
 This program only copies it to the path the grader reads:
     /output/entry.png
 Deterministic: the same bytes on every run, no network, no randomness.
