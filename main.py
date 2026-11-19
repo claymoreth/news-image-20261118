@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""news-image-20261118 V2.2 — entry program (Python 3.13, standard library only).
+"""news-image-20261118 V2.3 — entry program (Python 3.13, standard library only).
 
 The entry is the image entry.png beside this file (a 1024x1024 PNG front page
 summing up 18 November 2026 world news, drawn beforehand with Pillow).
-V2.2 keeps V2.1's 40 verified stories but rebuilds the LOOK so it does not
-resemble the day's top entry: a white masthead ("THE WORLD", black serif,
-date below a thin rule), one line "40 stories across 7 regions", ONE big
-hero left (APEC) with two stacked heroes right (Gulf, Voyager), a 2-column
-grid of ten HORIZONTAL panels (visual left, text right), an outline world
-map with BLUE pins and the legend above, a one-column "ALSO TODAY" sidebar
-(14-40), a numbers bar of six white boxes at the BOTTOM, and the date check
-as one italic line in the footer. Palette: black + white + brick red +
-dark blue only. Serif headlines, sans body.
+V2.3 keeps V2.2's approved layout (white masthead, 1+2 hero, 2-column
+horizontal grid, outline map, ALSO TODAY sidebar, numbers bar at the bottom,
+italic date-check line) and polishes it to zero defects: larger grid and
+list type with wider leading, a bigger outline map with a light graticule
+and ocean labels, a dark backing behind the HORMUZ label, and a verified
+8px+ gap between the date-check line and the sources line. Same 40 verified
+stories as V2.2 (one body refined: Sudan now names the June-Aug window of
+the Amnesty report). Palette: black + white + brick red + dark blue only.
+Serif headlines, sans body.
 This program only copies it to the path the grader reads:
     /output/entry.png
 Deterministic: the same bytes on every run, no network, no randomness.

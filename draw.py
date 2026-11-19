@@ -256,7 +256,7 @@ def draw_outline_map(d, x0, y0, mw, mh):
 
 
 def draw_pin_blue(d, x, y, num):
-    r = 7
+    r = 8
     d.ellipse([x - r, y - r, x + r, y + r], fill=NAVY2, outline=(255, 255, 255), width=1)
     f = F_SANS_B(8)
     tw = text_w(d, str(num), f)
@@ -295,7 +295,7 @@ GRID_LEFT = [
          body="Near Nuseirat, past the Yellow Line; 5,200 fled, 3 killed Wed."),
     dict(num=7, region="AFRICA", topic="SUDAN WAR", mini="pin",
          head="RSF drones kill 37 in El Obeid",
-         body="Amnesty urges a war-crimes inquiry; the RSF blames the army."),
+         body="Amnesty: nine strikes, June-Aug; urges war-crimes inquiry."),
 ]
 GRID_RIGHT = [
     dict(num=5, region="AMERICAS", topic="TECH", mini="chip",
@@ -306,7 +306,7 @@ GRID_RIGHT = [
          body="Landfall due 20 Nov; evacuations begin along the coast."),
     dict(num=11, region="AMERICAS", topic="US POLITICS", mini="ballot",
          head="Peltola takes Alaska; Jeffries wins nod",
-         body="Peltola 50.1% vs 45.8%, first Alaska Native in the Senate. Jeffries 251-11."),
+         body="Peltola 50.1% vs 45.8%, first Alaska Native in Senate. Jeffries 251-11."),
     dict(num=12, region="WORLD", topic="CULTURE", mini="controller",
          head="GTA VI goes on sale after 13 years",
          body="Midnight launch starts in New York; millions of copies expected."),
@@ -391,6 +391,7 @@ def hero_visual(d, kind, x, y, w, h):
         for px, py, r in [(0.62, 0.30, 6), (0.72, 0.45, 4), (0.55, 0.60, 5), (0.80, 0.62, 3), (0.45, 0.42, 3)]:
             cx, cy = x + px * w, y + py * h
             d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 120, 40), outline=(255, 220, 120), width=1)
+        d.rectangle([x + 4, y + h - 18, x + 62, y + h - 4], fill=(10, 25, 45))
         d.text((x + 8, y + h - 16), "HORMUZ", font=F_SANS_B(9), fill=(255, 220, 120))
     elif kind == "voyager":
         d.rectangle([x, y, x + w, y + h], fill=(5, 8, 18))
@@ -410,13 +411,27 @@ def hero_visual(d, kind, x, y, w, h):
 def draw_world_map_outline(d, x0, y0, mw, mh):
     """Outline world map: continent polygons as thin dark-blue outlines,
     light fill. NOT dot-matrix (that was Rank #1)."""
+    # light graticule (fills empty ocean so the map does not read as blank)
+    for lon in range(-150, 181, 30):
+        gx = x0 + (lon + 180) / 360 * mw
+        d.line([gx, y0, gx, y0 + mh], fill=(225, 228, 232), width=1)
+    for lat in [60, 30, 0, -30]:
+        gy = y0 + (75 - lat) / 130 * mh
+        d.line([x0, gy, x0 + mw, gy], fill=(225, 228, 232), width=1)
     for poly in CONTINENTS.values():
         pts = [lonlat_to_xy(lon, lat, x0, y0, mw, mh) for lon, lat in poly]
         d.polygon(pts, fill=(238, 240, 246), outline=NAVYBLUE, width=2)
+    # ocean labels (fill the empty water: Pacific left, Atlantic centre, Indian right)
+    of = font_path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
+    for label, lon, lat in [("PACIFIC", -150, 5), ("ATLANTIC", -30, 5),
+                            ("INDIAN OCEAN", 80, -35)]:
+        lx, ly = lonlat_to_xy(lon, lat, x0, y0, mw, mh)
+        tw = text_w(d, label, of)
+        d.text((lx - tw / 2, ly - 6), label, font=of, fill=(150, 160, 170))
 
 
 def draw_pin_blue(d, x, y, num):
-    r = 7
+    r = 8
     d.ellipse([x - r, y - r, x + r, y + r], fill=NAVYBLUE, outline=(255, 255, 255), width=1)
     f = F_SANS_B(8)
     tw = text_w(d, str(num), f)
@@ -458,7 +473,7 @@ def main():
         while len(hl) > 2 and hf.size > 11:
             hf = F_SERIF_B(hf.size - 1)
             hl = wrap(d, item["head"], hf, w - 12)
-        hy = ky + kicker_h + 4
+        hy = ky + kicker_h + 6
         for ln in hl[:2]:
             d.text((x + 6, hy), ln, font=hf, fill=INK)
             hy += int(hf.size * 1.2)
@@ -477,12 +492,12 @@ def main():
             issues.append(f"hero {item['num']} body {len(bl)} lines")
         d.rectangle([x, y, x + w, y + h], outline=(190, 190, 190), width=1)
 
-    hero_block(HERO[0], 8, 118, 596, 200, 100, 19, 11)          # APEC big left
-    hero_block(HERO[1], 620, 118, 396, 96, 36, 13, 9)           # Gulf stacked top
-    hero_block(HERO[2], 620, 222, 396, 96, 36, 13, 9)          # Voyager stacked bottom
+    hero_block(HERO[0], 8, 112, 596, 196, 96, 19, 11)          # APEC big left
+    hero_block(HERO[1], 620, 112, 396, 94, 36, 13, 9)           # Gulf stacked top
+    hero_block(HERO[2], 620, 214, 396, 94, 36, 13, 9)          # Voyager stacked bottom
 
     # ================= GRID: 2 BIG COLUMNS, HORIZONTAL PANELS (324-584) ==
-    grid_y0, row_h = 324, 52
+    grid_y0, row_h = 312, 48
     left_items = [GRID[0], GRID[4], GRID[5], GRID[6], GRID[3]]   # Kerch, EU, UK, Gaza, Sudan
     right_items = [GRID[1], GRID[2], GRID[7], GRID[8], GRID[9]]  # Nvidia, Akvan, Peltola, GTA, Bangladesh
     for ci, items in enumerate([left_items, right_items]):
@@ -500,7 +515,7 @@ def main():
             tw = col_w - 84 - 8
             d.text((tx, y + 3), f"{item['num']}  {item['region']} · {item['topic']}",
                    font=F_SANS_B(8), fill=kick_col)
-            hf = F_SERIF_B(12)
+            hf = F_SERIF_B(13)
             hl = wrap(d, item["head"], hf, tw)
             while len(hl) > 1 and hf.size > 10:
                 hf = F_SERIF_B(hf.size - 1)
@@ -511,7 +526,7 @@ def main():
                 hy += int(hf.size * 1.2)
             if len(hl) > 1:
                 issues.append(f"grid {item['num']} headline {len(hl)} lines")
-            bf = F_SANS(9)
+            bf = F_SANS(10)
             bl = wrap(d, item["body"], bf, tw)
             while len(bl) > 2 and bf.size > 8:
                 bf = F_SANS(bf.size - 1)
@@ -519,19 +534,19 @@ def main():
             by = hy + 1
             for ln in bl[:2]:
                 d.text((tx, by), ln, font=bf, fill=(50, 50, 50))
-                by += int(bf.size * 1.28)
+                by += int(bf.size * 1.45)
             if len(bl) > 2:
                 issues.append(f"grid {item['num']} body {len(bl)} lines")
 
     # ================= MAP (left) + SIDEBAR LIST (right) (590-890) =====
-    sec_y = 590
+    sec_y = 560
     d.text((10, sec_y), "WHERE IT HAPPENED", font=F_SANS_B(13), fill=INK)
     d.text((610, sec_y), "ALSO TODAY", font=F_SANS_B(13), fill=INK)
     d.line([8, sec_y + 18, 1016, sec_y + 18], fill=INK, width=1)
     # legend ABOVE the map
     d.text((10, sec_y + 22), "Blue pins 1–13 · continents as outlines · stories 14–40 at right",
            font=F_SANS(10), fill=(70, 70, 70))
-    map_x0, map_y0, map_w, map_h = 10, sec_y + 40, 580, 252
+    map_x0, map_y0, map_w, map_h = 10, sec_y + 40, 580, 280
     draw_world_map_outline(d, map_x0, map_y0, map_w, map_h)
     for num, lon, lat in PINS:
         px, py = lonlat_to_xy(lon, lat, map_x0, map_y0, map_w, map_h)
@@ -542,7 +557,7 @@ def main():
     # sidebar: ONE column, bullet dots, numbers kept
     list_x = 610
     lf_item = font_path("/usr/share/fonts/truetype/noto/NotoSans-Condensed.ttf", 10)
-    line_h = 10.5
+    line_h = 12.0
     ly = sec_y + 22
     for i, (num, text) in enumerate(LIST_ITEMS):
         yy = ly + i * line_h
@@ -563,25 +578,25 @@ def main():
         d.text((tx, yy), full, font=f, fill=(40, 40, 40))
 
     # ================= NUMBERS BAR — BOTTOM, 6 white boxes (896-948) =====
-    nb_y, nb_h = 896, 52
+    nb_y, nb_h = 914, 48
     box_w = 164
     bx = 8
     for num, lab in NUMBERS:
         d.rectangle([bx, nb_y, bx + box_w, nb_y + nb_h], fill=(255, 255, 255),
                     outline=INK, width=1)
         draw_centered(d, bx + box_w / 2, nb_y + 5, num, F_SERIF_B(20), INK)
-        draw_centered(d, bx + box_w / 2, nb_y + 32, lab, F_SANS(9), (70, 70, 70))
+        draw_centered(d, bx + box_w / 2, nb_y + 31, lab, F_SANS(10), (70, 70, 70))
         bx += box_w + 4
 
     # ================= FOOTER — DATE CHECK as 1 italic line, no red box ==
     dc = ("Date check — left out on purpose, first reported 17 Nov: "
           "Mongolia, Prague, Knesset.")
     dcf = F_SERIF_I(11)
-    draw_centered(d, W / 2, 956, dc, dcf, INK)
+    draw_centered(d, W / 2, 966, dc, dcf, INK)
     src = ("Sources: Reuters · AP · AFP · BBC · Al Jazeera · ONS · IMD · NASA · Amnesty · WHO — "
            "every story happened, or was first reported, on Wednesday 18 November 2026.")
-    draw_centered(d, W / 2, 978, src, F_SANS(9), (90, 90, 90))
-    draw_centered(d, W / 2, 996, "THE WORLD — 18 NOVEMBER 2026 · 40 STORIES · 7 REGIONS · ONE PAGE",
+    draw_centered(d, W / 2, 988, src, F_SANS(9), (90, 90, 90))
+    draw_centered(d, W / 2, 1006, "THE WORLD — 18 NOVEMBER 2026 · 40 STORIES · 7 REGIONS · ONE PAGE",
                   F_SANS_B(9), (90, 90, 90))
 
     img.save(OUT, "PNG", optimize=True)
