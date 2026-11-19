@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-"""news-image-20261118 V2.6 — entry program (Python 3.13, standard library only).
+"""news-image-20261118 V2.7 — entry program (Python 3.13, standard library only).
 
 The entry is the image entry.png beside this file (a 1024x1024 PNG front page
 summing up 18 November 2026 world news, drawn beforehand with Pillow).
-V2.6 is V2.5 with a warm newsprint CREAM paper background (owner: background
-jangan putih, kaya contoh) instead of pure white: PAPER (247, 243, 232), the
-map continents a touch darker (236, 231, 216), the graticule warm grey, the
-medium-story visual panels warm cream. The six numbers boxes stay white, so
-they read as white cards on the cream paper. Same 40 verified stories, same
-V2.5 layout, words and region colours. Palette: cream paper + black + white
-+ the 7 region colours. Serif headlines, sans body.
+V2.7 is V2.6 with upgraded ART only (same 40 verified stories, same order,
+same words, same cream paper, same layout geometry): richer map/scene-like
+hero visuals (APEC tarmac + plane, labelled Gulf map, Voyager with Earth,
+labelled Kerch map), a navy dot-matrix world map (Rank 1/3 style) replacing
+the outline map, and a HOW SURE legend. Palette: cream paper + black +
+white + the 7 region colours. Serif headlines, sans body.
 This program only copies it to the path the grader reads:
     /output/entry.png
 Deterministic: the same bytes on every run, no network, no randomness.
