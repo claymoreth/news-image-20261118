@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NEWS-IMAGE-20261118 V2.5 — V2.4, made COLOURFUL (owner: "bikin warna warni").
+"""NEWS-IMAGE-20261118 V2.6 — V2.5, paper now warm newsprint CREAM (owner: "background jangan putih, kaya contoh").
 front page (owner-supplied). Architecture is ours, words are ours: nothing
 is copied from either reference — no headline, no label, no sentence.
 
@@ -39,7 +39,7 @@ FONT_DIR = "/usr/share/fonts/truetype/dejavu"
 
 # ---------- palette (black + white + brick red + dark blue only) ----------
 INK = (18, 18, 18)
-PAPER = (255, 255, 255)
+PAPER = (247, 243, 232)          # warm newsprint cream, like the reference
 BRICK = (178, 60, 40)          # brick red accent
 NAVY2 = (20, 50, 90)           # dark blue accent
 NAVYBLUE = NAVY2
@@ -283,7 +283,7 @@ def draw_outline_map(d, x0, y0, mw, mh):
     # light fill + dark outline per continent (no dots)
     for poly in CONTINENTS.values():
         pts = [lonlat_to_xy(lon, lat, x0, y0, mw, mh) for lon, lat in poly]
-        d.polygon(pts, fill=(244, 244, 242))
+        d.polygon(pts, fill=(236, 231, 216))
         d.line(pts + [pts[0]], fill=(70, 70, 70), width=1)
 
 
@@ -361,13 +361,13 @@ def draw_world_map_outline(d, x0, y0, mw, mh):
     # light graticule (fills empty ocean so the map does not read as blank)
     for lon in range(-150, 181, 30):
         gx = x0 + (lon + 180) / 360 * mw
-        d.line([gx, y0, gx, y0 + mh], fill=(225, 228, 232), width=1)
+        d.line([gx, y0, gx, y0 + mh], fill=(228, 224, 210), width=1)
     for lat in [60, 30, 0, -30]:
         gy = y0 + (75 - lat) / 130 * mh
-        d.line([x0, gy, x0 + mw, gy], fill=(225, 228, 232), width=1)
+        d.line([x0, gy, x0 + mw, gy], fill=(228, 224, 210), width=1)
     for poly in CONTINENTS.values():
         pts = [lonlat_to_xy(lon, lat, x0, y0, mw, mh) for lon, lat in poly]
-        d.polygon(pts, fill=(238, 240, 246), outline=NAVYBLUE, width=2)
+        d.polygon(pts, fill=(236, 231, 216), outline=NAVYBLUE, width=2)
     # ocean labels (fill the empty water: Pacific left, Atlantic centre, Indian right)
     of = font_path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 10)
     for label, lon, lat in [("PACIFIC", -150, 5), ("ATLANTIC", -30, 5),
@@ -622,7 +622,7 @@ def main():
 
     # ================= ROWS 2-3: 6 MEDIUM stories each (336-610) =========
     def medium_block(item, x, y, w, h, vis_h=54):
-        d.rectangle([x, y, x + w, y + vis_h], fill=(245, 245, 242))
+        d.rectangle([x, y, x + w, y + vis_h], fill=(241, 237, 224))
         mini_visual(d, item["mini"], x + 4, y + 4, w - 8, vis_h - 8)
         ky = y + vis_h
         d.rectangle([x, ky, x + w, ky + 14], fill=REGION_COLORS[item["region"]])
