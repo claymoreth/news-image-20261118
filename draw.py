@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""NEWS-IMAGE-20261118 V2.4 — rebuild from 0, guided by a SECOND reference
+"""NEWS-IMAGE-20261118 V2.5 — V2.4, made COLOURFUL (owner: "bikin warna warni").
 front page (owner-supplied). Architecture is ours, words are ours: nothing
 is copied from either reference — no headline, no label, no sentence.
 
@@ -45,6 +45,16 @@ NAVY2 = (20, 50, 90)           # dark blue accent
 NAVYBLUE = NAVY2
 NAVYBLUE = NAVY2
 GREY = (90, 90, 90)
+# ---------- region colours (V2.5: colourful) ----------
+REGION_COLORS = {
+    "AMERICAS": (30, 90, 180),    # blue
+    "ASIA": (200, 60, 50),        # red
+    "EUROPE": (25, 60, 130),      # navy
+    "MIDDLE EAST": (35, 140, 75), # green
+    "AFRICA": (220, 130, 30),     # orange
+    "OCEANIA": (0, 150, 150),     # teal
+    "WORLD": (120, 80, 165),      # purple
+}
 GREY_LT = (242, 242, 240)
 GREY_MD = (200, 200, 200)
 
@@ -476,6 +486,13 @@ NUMBERS = [
     ("3.6%", "UK inflation"),
 ]
 
+# Pin number -> region (for the coloured pins)
+PIN_REGIONS = {
+    1: "ASIA", 2: "MIDDLE EAST", 4: "EUROPE", 5: "AMERICAS", 6: "ASIA",
+    7: "AFRICA", 9: "EUROPE", 10: "MIDDLE EAST", 11: "AMERICAS",
+    12: "WORLD", 13: "ASIA", 16: "ASIA",
+}
+
 # 12 pins (r=6): Voyager is story 3, in space — no pin. EU/Brussels and
 # COP31/Antalya omitted (they collide with London / Gaza on this scale);
 # Fed/DC omitted (collides with NYC). Akvan nudged to (84, 18.5) so it
@@ -488,13 +505,13 @@ PINS = [
 
 # BY REGION segments: (label, count, fill, text colour)
 REGIONS = [
-    ("AMERICAS", 10, NAVY2, (255, 255, 255)),
-    ("ASIA", 9, BRICK, (255, 255, 255)),
-    ("EUROPE", 6, (50, 50, 50), (255, 255, 255)),
-    ("MIDDLE EAST", 5, (110, 110, 110), (255, 255, 255)),
-    ("AFRICA", 4, (160, 160, 160), (18, 18, 18)),
-    ("OCEANIA", 3, (200, 200, 200), (18, 18, 18)),
-    ("WORLD", 3, (230, 230, 230), (18, 18, 18)),
+    ("AMERICAS", 10, REGION_COLORS["AMERICAS"], (255, 255, 255)),
+    ("ASIA", 9, REGION_COLORS["ASIA"], (255, 255, 255)),
+    ("EUROPE", 6, REGION_COLORS["EUROPE"], (255, 255, 255)),
+    ("MIDDLE EAST", 5, REGION_COLORS["MIDDLE EAST"], (255, 255, 255)),
+    ("AFRICA", 4, REGION_COLORS["AFRICA"], (255, 255, 255)),
+    ("OCEANIA", 3, REGION_COLORS["OCEANIA"], (255, 255, 255)),
+    ("WORLD", 3, REGION_COLORS["WORLD"], (255, 255, 255)),
 ]
 
 # Timeline: only times we can stand behind (ONS 07:00 GMT, Fed 14:00 EST =
@@ -509,9 +526,11 @@ TIMELINE = [
 ]
 
 
-def draw_pin_small(d, x, y, num):
+def draw_pin_small(d, x, y, num, fill=None):
     r = 6
-    d.ellipse([x - r, y - r, x + r, y + r], fill=NAVY2, outline=(255, 255, 255), width=1)
+    if fill is None:
+        fill = NAVY2
+    d.ellipse([x - r, y - r, x + r, y + r], fill=fill, outline=(255, 255, 255), width=1)
     f = F_SANS_B(7)
     tw = text_w(d, str(num), f)
     d.text((x - tw / 2, y - 5), str(num), font=f, fill=(255, 255, 255))
@@ -566,13 +585,13 @@ def main():
     def large_block(item, x, y, w, h, vis_h=64):
         hero_visual(d, item["visual"], x, y, w, vis_h)
         ky = y + vis_h
-        d.rectangle([x, ky, x + w, ky + 16], fill=NAVYBLUE)
-        d.rectangle([x, ky, x + 22, ky + 16], fill=BRICK)
+        d.rectangle([x, ky, x + w, ky + 16], fill=REGION_COLORS[item["region"]])
+        d.rectangle([x, ky, x + 22, ky + 16], fill=INK)
         draw_centered(d, x + 11, ky + 2, str(item["num"]), F_SANS_B(10), (255, 255, 255))
         kick = f"{item['region']} · {item['topic']}"
         d.text((x + 28, ky + 2), kick, font=F_SANS_B(9), fill=(255, 255, 255))
         d.text((x + w - 6 - text_w(d, item["src"], F_SANS(7)), ky + 3),
-               item["src"], font=F_SANS(7), fill=(200, 210, 225))
+               item["src"], font=F_SANS(7), fill=(255, 255, 255))
         hf = F_SERIF_B(13)
         hl = wrap(d, item["head"], hf, w - 12)
         while len(hl) > 2 and hf.size > 11:
@@ -606,8 +625,8 @@ def main():
         d.rectangle([x, y, x + w, y + vis_h], fill=(245, 245, 242))
         mini_visual(d, item["mini"], x + 4, y + 4, w - 8, vis_h - 8)
         ky = y + vis_h
-        d.rectangle([x, ky, x + w, ky + 14], fill=NAVYBLUE)
-        d.rectangle([x, ky, x + 20, ky + 14], fill=BRICK)
+        d.rectangle([x, ky, x + w, ky + 14], fill=REGION_COLORS[item["region"]])
+        d.rectangle([x, ky, x + 20, ky + 14], fill=INK)
         draw_centered(d, x + 10, ky + 2, str(item["num"]), F_SANS_B(9), (255, 255, 255))
         kick = f"{item['region']} · {item['topic']}"
         d.text((x + 24, ky + 2), kick, font=F_SANS_B(8), fill=(255, 255, 255))
@@ -646,13 +665,18 @@ def main():
     d.text((10, sec_y), "WHERE IT HAPPENED", font=F_SANS_B(12), fill=INK)
     d.text((570, sec_y), "ALSO ON WEDNESDAY", font=F_SANS_B(12), fill=INK)
     d.line([8, sec_y + 18, 1016, sec_y + 18], fill=INK, width=1)
-    d.text((10, sec_y + 22), "Blue pins 1–16 · continents as outlines · Voyager 1 (story 3) is in space",
-           font=F_SANS(9), fill=(70, 70, 70))
+    lx = 10
+    for rname in ["AMERICAS", "ASIA", "EUROPE", "MIDDLE EAST", "AFRICA", "OCEANIA", "WORLD"]:
+        d.ellipse([lx, sec_y + 24, lx + 9, sec_y + 33], fill=REGION_COLORS[rname])
+        lx += 13
+        lab = rname.title()
+        d.text((lx, sec_y + 22), lab, font=F_SANS(9), fill=(70, 70, 70))
+        lx += int(text_w(d, lab, F_SANS(9))) + 14
     map_x0, map_y0, map_w, map_h = 10, sec_y + 40, 540, 240
     draw_world_map_outline(d, map_x0, map_y0, map_w, map_h)
     for num, lon, lat in PINS:
         px, py = lonlat_to_xy(lon, lat, map_x0, map_y0, map_w, map_h)
-        draw_pin_small(d, px, py, num)
+        draw_pin_small(d, px, py, num, REGION_COLORS[PIN_REGIONS[num]])
     d.text((10, sec_y + 40 + map_h + 4),
            "Voyager 1 is story 3 — in space, so it has no pin on this map.",
            font=F_SANS(9), fill=(90, 90, 90))
